@@ -22,7 +22,8 @@ class Sensor:
         self.active = True
         self.last_value = None
         self.last_date = None
-
+    def register_callback(self, callback):
+        self.callback = callback
     def read_value(self):
         """
         Symuluje pobranie odczytu z czujnika.
@@ -35,13 +36,17 @@ class Sensor:
             self.last_date = now
             value = random.uniform(self.min_value, self.max_value)
             self.last_value = value
+            if self.callback:
+                self.callback(self.sensor_id, now, value, self.unit)
             return value
         difference = now - self.last_date
         if difference.total_seconds() > self.frequency:
             self.last_date = now
             value = random.uniform(self.min_value, self.max_value)
             self.last_value = value
+            self.callback(self.sensor_id, now, value, self.unit)
             return value
+        self.callback(self.sensor_id, now, self.last_value, self.unit)
         return self.last_value
     def get_last_value(self):
         """

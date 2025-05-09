@@ -18,8 +18,9 @@ class Logger:
             self.retention_days = data['retention_days']
             self.filename_pattern = data["filename_pattern"]
             self.buffer_size = data['buffer_size']
+        self.lastRotation = datetime.now()
+        self.rotation_counter = 0
         os.makedirs(os.path.join(self.log_dir, 'archive'), exist_ok=True)
-        os.makedirs(self.log_dir, exist_ok=True)
         self.buffer: List[List[str]] =[]
     def start(self) -> None:
         """
@@ -27,17 +28,17 @@ class Logger:
         """
         today = datetime.now()
         self.filename = today.strftime(self.filename_pattern)
+        self.filePath = os.path.join(self.log_dir, self.filename)
         # Nagłówki, które chcemy zapisać, jeśli plik nie istnieje
         nagłówki = ['timestamp', 'sensor_id', 'value', 'unit']
         # Sprawdzamy, czy plik istnieje
-        if not os.path.exists(self.filename):
+        if not os.path.exists(self.filePath):
             # Tworzymy nowy plik i zapisujemy nagłówki
-            self.log_file = open(self.filename, 'w', newline='', encoding='utf-8')
-            writer = csv.writer(self.log_file)
-            writer.writerow(nagłówki)
-            self.lastRotation = today
+            self.log_file = open(self.filePath, 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.log_file)
+            self.writer.writerow(nagłówki)
         else:
-            self.log_file = open(filename, 'a', newline='', encoding='utf-8')
+            self.log_file = open(self.filePath, 'a', newline='', encoding='utf-8')
     def stop(self) -> None:
         """
         Wymusza zapis bufora i zamyka bieżący plik.
@@ -56,16 +57,20 @@ class Logger:
         """
         row = [timestamp.isoformat(), sensor_id, value, unit]
         self.buffer.append(row)
-        if len(self.buffer >= self.buffer_size):
-            writer = csv.writer(self.log_file)
-            writer.writerows(self.buffer)
-            self.buffer: List[List[str]] = []
-            if (datetime.now() - self.lastRotation).total_seconds() > self.hours_to_rotate or os.path.getsize(self.filename) > self.max_size_mb * 1048576: """/ 3600"""
+        if len(self.buffer) >= self.buffer_size:
+            self.writer.writerows(self.buffer)
+            self.buffer = []
+            if (datetime.now() - self.lastRotation).total_seconds() > self.hours_to_rotate or os.path.getsize(self.filename) > self.max_size_mb * 1048576:
                 self.stop()
-                os.rename(self.filename, os.path.join('archive', self.filename))
-                for nazwa_pliku in os.listdir('archive'):
-                    pelna_sciezka = os.path.join('archive', nazwa_pliku)
-                    if os.path.gettime(pelna_sciezka) < time.time() - self.retention_days * 86400:
+                currentTime = datetime.now()
+                if currentTime.date() != self.lastRotation.date():
+                    self.rotation_counter = 0
+                    self.lastRotation = currentTime
+                os.rename(self.filePath, os.path.join(self.log_dir, 'archive', str(self.rotation_counter)+"_"+self.filename))
+                self.rotation_counter += 1
+                for nazwa_pliku in os.listdir(os.path.join(self.log_dir, 'archive')):
+                    pelna_sciezka = os.path.join(self.log_dir, 'archive', nazwa_pliku)
+                    if os.path.getctime(pelna_sciezka) < time.time() - self.retention_days * 86400:
                         os.remove(pelna_sciezka)
                 self.start()
     def read_logs(
@@ -77,4 +82,21 @@ class Logger:
         """
         Pobiera wpisy z logów zadanego zakresu i opcjonalnie konkretnego czujnika.
         """
-        ...
+        logs = []
+        for folder in [self.log_dir, os.path.join(self.log_dir, "archive")]:
+            if os.path.exists(folder):
+                for filename in os.listdir(folder):
+                    filePath = os.path.join(folder, filename)
+                    with open(filePath, "r", newline='', encoding='utf-8') as file:
+                        reader = csv.DictReader(file)
+                        for row in reader:
+                            timestamp = datetime.fromisoformat(row['timestamp'])
+                            if start <= timestamp <= end:
+                                if sensor_id is None or row['sensor_id'] == sensor_id:
+                                    logs.append({
+                                        "timestamp": timestamp,
+                                        "sensor_id": row['sensor_id'],
+                                        "value": row['value'],
+                                        "unit": row['unit']
+                                    })
+        return logs
