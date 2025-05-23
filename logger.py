@@ -30,7 +30,7 @@ class Logger:
         self.filename = today.strftime(self.filename_pattern)
         self.filePath = os.path.join(self.log_dir, self.filename)
         # Nagłówki, które chcemy zapisać, jeśli plik nie istnieje
-        nagłówki = ['timestamp', 'sensor_id', 'value', 'unit']
+        nagłówki = ['sensor_id', 'timestamp', 'value', 'unit']
         # Sprawdzamy, czy plik istnieje
         if not os.path.exists(self.filePath):
             # Tworzymy nowy plik i zapisujemy nagłówki
@@ -55,7 +55,7 @@ class Logger:
         """
         Dodaje wpis do bufora i ewentualnie wykonuje rotację pliku.
         """
-        row = [timestamp.isoformat(), sensor_id, value, unit]
+        row = [sensor_id, timestamp.isoformat(), value, unit]
         self.buffer.append(row)
         if len(self.buffer) >= self.buffer_size:
             self.writer.writerows(self.buffer)

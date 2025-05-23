@@ -22,6 +22,7 @@ class Sensor:
         self.active = True
         self.last_value = None
         self.last_date = None
+        self.callback = None
     def register_callback(self, callback):
         self.callback = callback
     def read_value(self):
@@ -44,9 +45,11 @@ class Sensor:
             self.last_date = now
             value = random.uniform(self.min_value, self.max_value)
             self.last_value = value
-            self.callback(self.sensor_id, now, value, self.unit)
+            if self.callback:
+                self.callback(self.sensor_id, now, value, self.unit)
             return value
-        self.callback(self.sensor_id, now, self.last_value, self.unit)
+        if self.callback:
+            self.callback(self.sensor_id, now, self.last_value, self.unit)
         return self.last_value
     def get_last_value(self):
         """

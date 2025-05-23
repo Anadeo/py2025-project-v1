@@ -1,6 +1,5 @@
 import json
 import socket
-from http.client import responses
 import time
 
 class NetworkClient:
@@ -14,7 +13,8 @@ class NetworkClient:
             self.port = data["port"]
             self.retry_count = data["retries"]
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(data["timeout"])
+            self.timeout = data["timeout"]
+            self.socket.settimeout(self.timeout)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def connect(self) -> None:
@@ -26,9 +26,8 @@ class NetworkClient:
                 print("[INFO] Połączono z serwerem")
                 return
             except socket.error as e:
-                print("[WARN] Nie udało się połączyć z serwerem ("+str(i)+"):"+e)
-                print("[WARN]Ponowna próba za 5s")
-                time.sleep(5)
+                print("[WARN] Nie udało się połączyć z serwerem ("+str(i)+"): "+str(e))
+                time.sleep(1)
         print("[ERROR] Wyczerpano wszystkie próby łączenia z serwerem")
 
     def send(self, data: dict) -> bool:
@@ -42,15 +41,15 @@ class NetworkClient:
                 if response != "ACK\n":
                     print("[ERROR] Błędna odpowiedź serwera: " + response)
                     return False
+                print("[INFO] Otrzymano potwierdzenie od serwera")
                 return True
             except socket.timeout:
                 print("[ERROR] Nie otrzymano potwierdzenia zwrotnego w wymaganym czasie")
-                return False
             except Exception as e:
                 print("[ERROR] Wystąpił problem z odbiorem danych: "+str(e))
-                return False
         except Exception as e:
             print("[ERROR] Nie udało się wysłać danych: "+str(e))
+        return False
 
     def close(self) -> None:
         """Zamyka połączenie."""
@@ -61,5 +60,5 @@ class NetworkClient:
     def _serialize(self, data: dict) -> bytes:
         return json.dumps(data).encode('utf-8')
 
-    def _deserialize(self, raw: bytes) -> dict:
-        return json.loads(raw.decode('utf-8'))
+    def _deserialize(self, raw: bytes) -> str:
+        return raw.decode('utf-8')
