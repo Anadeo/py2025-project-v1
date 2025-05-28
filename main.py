@@ -2,6 +2,14 @@ import sensors
 import time
 import network.client
 import datetime
+from tkinter import *
+root = Tk()
+root.title("Network Server Gui");
+port = Label(root, text="Port: ")
+port.pack(anchor="nw")
+entry = Entry(root)
+entry.pack()
+root.mainloop()
 wilgotnosc = sensors.HumiditySensor(0, "Sensor")
 client = network.client.NetworkClient()
 client.connect()
