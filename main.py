@@ -55,9 +55,11 @@ if odp == "s":
 elif odp == "c":
     import sensors
     import logger
-    import time
+    import time as time_mopdue
     import network.client
     import datetime
+    import global_data
+    from datetime import datetime, time, timedelta
     wilgotnosc = sensors.HumiditySensor(0, "Sensor_wilgotnosci")
     logowanie = logger.Logger("config.json")
     logowanie.start()
@@ -70,9 +72,12 @@ elif odp == "c":
     jakosc.register_callback(logowanie.log_reading)
     client = network.client.NetworkClient()
     client.connect()
+    virtual_date = datetime.combine(datetime.today(), time.min)
+    INTERVAL_S = 0.5
     while True:
-        time.sleep(0.5)
-        client.send({"id": wilgotnosc.sensor_id, "timestamp": datetime.datetime.now().isoformat(), "value": wilgotnosc.read_value(), "unit": wilgotnosc.unit})
-        client.send({"id": temperatura.sensor_id, "timestamp": datetime.datetime.now().isoformat(), "value": temperatura.read_value(), "unit": temperatura.unit})
-        client.send({"id": cisnienie.sensor_id, "timestamp": datetime.datetime.now().isoformat(), "value": cisnienie.read_value(), "unit": cisnienie.unit})
-        client.send({"id": jakosc.sensor_id, "timestamp": datetime.datetime.now().isoformat(), "value": jakosc.read_value(), "unit": jakosc.unit})
+        time_mopdue.sleep(INTERVAL_S)
+        virtual_date += timedelta(seconds=3600*INTERVAL_S)
+        client.send({"id": wilgotnosc.sensor_id, "timestamp": virtual_date.isoformat(), "value": wilgotnosc.read_value(), "unit": wilgotnosc.unit})
+        client.send({"id": temperatura.sensor_id, "timestamp": virtual_date.isoformat(), "value": temperatura.read_value(), "unit": temperatura.unit})
+        client.send({"id": cisnienie.sensor_id, "timestamp": virtual_date.isoformat(), "value": cisnienie.read_value(), "unit": cisnienie.unit})
+        client.send({"id": jakosc.sensor_id, "timestamp": virtual_date.isoformat(), "value": jakosc.read_value(), "unit": jakosc.unit})

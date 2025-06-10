@@ -55,13 +55,12 @@ class NetworkServer:
         global_data.history[sensor_id].append((timestamp, value))
 
         now = timestamp
-        one_sec_ago = now - timedelta(seconds=1)
-        twelve_sec_ago = now - timedelta(seconds=12)
+        one_sec_ago = now - timedelta(hours=1)
+        twelve_sec_ago = now - timedelta(hours=12)
 
         values_1s = [v for (t, v) in global_data.history[sensor_id] if t >= one_sec_ago]
         values_12s = [v for (t, v) in global_data.history[sensor_id] if t >= twelve_sec_ago]
-        print(len(values_1s))
-        print(len(values_12s))
+
         global_data.history[sensor_id] = [entry for entry in global_data.history[sensor_id] if entry[0] >= twelve_sec_ago]
 
         avg_1s = round(sum(values_1s) / len(values_1s), 2) if values_1s else ""

@@ -90,7 +90,7 @@ class HumiditySensor(Sensor):
         super().__init__(sensor_id, name, "%", 0, 100, frequency)
         self.start_time = time.time()
     def read_value(self):
-        SECONDS_PER_DAY = 120
+        SECONDS_PER_DAY = 3600*24
         virtual_day_time = (time.time() - self.start_time) % SECONDS_PER_DAY / SECONDS_PER_DAY
         if 0.25 <= virtual_day_time and virtual_day_time <= 0.75: # dzień
             self.min_value = 30

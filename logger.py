@@ -39,6 +39,7 @@ class Logger:
             self.writer.writerow(nagłówki)
         else:
             self.log_file = open(self.filePath, 'a', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.log_file)
     def stop(self) -> None:
         """
         Wymusza zapis bufora i zamyka bieżący plik.
@@ -60,12 +61,14 @@ class Logger:
         if len(self.buffer) >= self.buffer_size:
             self.writer.writerows(self.buffer)
             self.buffer = []
-            if (datetime.now() - self.lastRotation).total_seconds() > self.hours_to_rotate or os.path.getsize(self.filename) > self.max_size_mb * 1048576:
+            if (datetime.now() - self.lastRotation).total_seconds() > self.hours_to_rotate or os.path.getsize(self.filePath) > self.max_size_mb * 1048576:
                 self.stop()
                 currentTime = datetime.now()
                 if currentTime.date() != self.lastRotation.date():
                     self.rotation_counter = 0
                     self.lastRotation = currentTime
+                if os.path.isfile(os.path.join(self.log_dir, 'archive', str(self.rotation_counter)+"_"+self.filename)):
+                    os.remove(os.path.join(self.log_dir, 'archive', str(self.rotation_counter)+"_"+self.filename))
                 os.rename(self.filePath, os.path.join(self.log_dir, 'archive', str(self.rotation_counter)+"_"+self.filename))
                 self.rotation_counter += 1
                 for nazwa_pliku in os.listdir(os.path.join(self.log_dir, 'archive')):
